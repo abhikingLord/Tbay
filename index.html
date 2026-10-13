@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>Today</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Today">
+<meta name="theme-color" content="#F5F5F7" id="themeColor">
+<style>
+/* ---------- Tokens ---------- */
+:root{
+  --font:-apple-system,"SF Pro Display","SF Pro Text",BlinkMacSystemFont,"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --bg:#F5F5F7; --card:#FFFFFF; --text:#1D1D1F; --text2:#6E6E73;
+  --empty:#EFEFF4; --chip:rgba(60,60,67,.09); --alert:rgba(255,255,255,.84);
+  --hair:rgba(60,60,67,.2); --cardline:rgba(0,0,0,.04);
+  --ph1:#E9EEFA; --ph2:#F5E9F6;
+  --sky1:#BFE0FF; --sky2:#EEF6FF; --cloud:#FFFFFF; --hill1:#BAD983; --hill2:#8CA932;
+  --blue:#0A84FF;
+}
+html[data-theme="dark"]{
+  --bg:#000000; --card:#1C1C1E; --text:#F5F5F7; --text2:#98989F;
+  --empty:#2C2C2E; --chip:rgba(235,235,245,.14); --alert:rgba(44,44,46,.84);
+  --hair:rgba(235,235,245,.2); --cardline:rgba(255,255,255,.05);
+  --ph1:#24242B; --ph2:#2B2331;
+  --sky1:#1B2A44; --sky2:#0F1A2E; --cloud:#3A4660; --hill1:#3F5C2B; --hill2:#2D4A1C;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;scrollbar-width:none}
+*::-webkit-scrollbar{display:none;width:0;height:0}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--font);
+  -webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
+html.locked,html.locked body{overflow:hidden}
+button{font:inherit;color:inherit;border:0;background:none;padding:0;margin:0;cursor:pointer;touch-action:manipulation}
+svg{display:block}
+
+.app{max-width:480px;margin:0 auto;padding-bottom:calc(48px + env(safe-area-inset-bottom,0px));overflow-x:hidden}
+
+/* ---------- Hero video (edge to edge) ---------- */
+.hero{position:relative;width:100%;height:56vh;height:56svh;min-height:380px;max-height:620px;overflow:hidden;
+  background:linear-gradient(160deg,#FFD6E8 0%,#E4D4FF 45%,#FFE6C7 100%);
+  -webkit-mask-image:linear-gradient(to bottom,#000 58%,rgba(0,0,0,0) 100%);
+          mask-image:linear-gradient(to bottom,#000 58%,rgba(0,0,0,0) 100%)}
+html[data-theme="dark"] .hero{background:linear-gradient(160deg,#3A1F34 0%,#251C45 45%,#3A2A1A 100%)}
+.hero video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;transition:filter .6s}
+.hero.rest video{filter:grayscale(1) brightness(.92)}
+
+/* ---------- Greeting ---------- */
+.head{position:relative;z-index:2;padding:0 24px;margin-top:-76px}
+.head h1{margin:0;font-size:clamp(40px,11.6vw,56px);line-height:1.04;letter-spacing:-.037em;font-weight:700;text-wrap:balance}
+.head h1 span{display:block}
+.prompt{margin-top:18px;min-height:78px}
+.prompt .q{margin:0;font-size:19px;line-height:1.3;letter-spacing:-.012em;color:var(--text2);font-weight:500}
+.yn{display:flex;gap:10px;margin-top:14px}
+.yn button{flex:1;height:48px;border-radius:24px;background:var(--chip);font-size:17px;font-weight:600;letter-spacing:-.01em;transition:transform .15s,background .2s,color .2s}
+.yn button:active{transform:scale(.96)}
+.yn button.on.yes{background:var(--c);color:#fff;box-shadow:0 6px 18px -6px var(--c)}
+.yn button.on.no{background:#8E8E93;color:#fff}
+
+/* ---------- Cards ---------- */
+.card{background:var(--card);border-radius:28px;box-shadow:0 0 0 .5px var(--cardline)}
+.press{transition:transform .18s cubic-bezier(.2,.8,.2,1)}
+.press:active{transform:scale(.975)}
+.sec{padding:0 20px;margin-top:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:0 20px;margin-top:22px}
+.grid2.links{margin-top:14px}
+
+.imgcard{position:relative;aspect-ratio:1;overflow:hidden}
+.imgcard .sky{position:absolute;inset:0;width:100%;height:100%}
+.imgcard img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
+
+.tilecard{display:flex;flex-direction:column;padding:14px;text-align:left;aspect-ratio:1;width:100%}
+.tc-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.ico{width:28px;height:28px;border-radius:9px;background:rgba(var(--rgb),.16);color:rgb(var(--rgb));display:grid;place-items:center;flex:none}
+.ico svg{width:16px;height:16px}
+.tc-title{flex:1;font-size:14px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{width:24px;height:24px;border-radius:8px;background:var(--chip);color:var(--text2);display:grid;place-items:center;flex:none}
+.badge svg{width:13px;height:13px;opacity:.45}
+.badge.on{background:rgba(var(--rgb),.2);color:rgb(var(--rgb))}
+.badge.on svg{opacity:1}
+.tc-grid{flex:1;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;align-content:center}
+
+/* ---------- Tiles ---------- */
+.tile{aspect-ratio:1;border-radius:24%;background:rgba(var(--rgb),.16)}
+.tile.yes{background:rgb(var(--rgb));box-shadow:0 0 10px rgba(var(--rgb),.45)}
+.tile.pend{background:rgba(var(--rgb),.16)}
+.tile.today{box-shadow:0 0 0 2px var(--card),0 0 0 3.5px rgba(var(--rgb),.95)}
+.tile.yes.today{box-shadow:0 0 0 2px var(--card),0 0 0 3.5px rgba(var(--rgb),.95),0 0 10px rgba(var(--rgb),.45)}
+.tile.l1{background:rgba(var(--rgb),.32)}
+.tile.l2{background:rgba(var(--rgb),.52)}
+.tile.l3{background:rgba(var(--rgb),.76);box-shadow:0 0 7px rgba(var(--rgb),.35)}
+.tile.l4{background:rgb(var(--rgb));box-shadow:0 0 13px rgba(var(--rgb),.85)}
+.tile.l3.today{box-shadow:0 0 0 2px var(--card),0 0 0 3.5px rgba(var(--rgb),.95),0 0 7px rgba(var(--rgb),.35)}
+.tile.l4.today{box-shadow:0 0 0 2px var(--card),0 0 0 3.5px rgba(var(--rgb),.95),0 0 13px rgba(var(--rgb),.85)}
+.tile.future{background:var(--empty);box-shadow:none}
+
+/* ---------- Week card ---------- */
+.week{padding:18px 16px 12px;cursor:pointer;width:100%;display:block;text-align:left}
+.wk-top,.wk-row{display:grid;grid-template-columns:128px 1fr;align-items:center}
+.wk-top{margin-bottom:6px}
+.range{font-size:15px;font-weight:600;color:var(--text2);letter-spacing:-.01em}
+.wk-days,.wk-cells{display:grid;grid-template-columns:repeat(7,1fr)}
+.wk-days span{text-align:center;font-size:12px;font-weight:600;color:var(--text2)}
+.wk-days span.now{color:var(--text)}
+.wk-row{height:48px}
+.wk-label{display:flex;align-items:center;gap:8px;min-width:0}
+.wk-label .ico{width:26px;height:26px;border-radius:8px}
+.wk-label .ico svg{width:15px;height:15px}
+.wk-label span.t{font-size:13px;font-weight:600;letter-spacing:-.012em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.c{position:relative;height:30px;display:flex;align-items:center;justify-content:center}
+.c .dot{position:relative;z-index:1;width:22px;height:22px;border-radius:50%;background:rgba(var(--rgb),.18);display:grid;place-items:center;color:#fff}
+.c .dot svg{width:12px;height:12px;stroke-width:3;opacity:0}
+.c.yes .dot{background:rgb(var(--rgb));box-shadow:0 0 9px rgba(var(--rgb),.45)}
+.c.yes .dot svg{opacity:1}
+.c.join::before{content:"";position:absolute;left:-50%;width:100%;top:50%;height:4px;margin-top:-2px;background:rgb(var(--rgb))}
+
+/* ---------- Daily glow card ---------- */
+.daycard{padding:16px;width:100%;display:block;text-align:left}
+.dc-grid{display:grid;grid-template-columns:repeat(14,1fr);gap:5px;margin-top:2px}
+.daycard .tile{border-radius:28%}
+.daycard .tile.today{box-shadow:0 0 0 2px var(--card),0 0 0 3px rgba(var(--rgb),.95)}
+
+/* ---------- Static grid ---------- */
+.gcard{position:relative;aspect-ratio:1;overflow:hidden;padding:0;width:100%;border-radius:28px}
+.gcard .media{position:absolute;inset:0;border-radius:0;aspect-ratio:auto;height:100%}
+.gcard .media img{height:100%;object-fit:cover;position:absolute;inset:0}
+
+/* ---------- Media placeholder / natural-shape images ---------- */
+.media{position:relative;overflow:hidden;border-radius:28px;aspect-ratio:4/3;background:linear-gradient(150deg,var(--ph1),var(--ph2))}
+.media img{display:block;width:100%;height:auto;opacity:0;transition:opacity .35s}
+.media.loaded{aspect-ratio:auto;background:none}
+.media.loaded img{opacity:1}
+.gcard .media.loaded{aspect-ratio:auto}
+
+/* ---------- Sheets (popups) ---------- */
+.layer{position:fixed;inset:0;z-index:50;visibility:hidden;transition:visibility 0s linear .5s}
+.layer.open{visibility:visible;transition-delay:0s}
+.backdrop{position:absolute;inset:0;background:rgba(0,0,0,.32);opacity:0;transition:opacity .4s;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.layer.open .backdrop{opacity:1}
+.sheet{position:absolute;left:0;right:0;bottom:0;top:calc(env(safe-area-inset-top,0px) + 14px);width:100%;max-width:480px;margin:0 auto;
+  background:var(--card);border-radius:36px 36px 0 0;transform:translateY(105%);transition:transform .5s cubic-bezier(.32,.72,0,1);overflow:hidden;display:flex;flex-direction:column}
+.layer.open .sheet{transform:translateY(0)}
+.close{position:absolute;top:14px;right:14px;z-index:5;width:36px;height:36px;border-radius:50%;background:var(--chip);color:var(--text);display:grid;place-items:center;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.close svg{width:16px;height:16px;stroke-width:2.6}
+.sheet-scroll{position:relative;flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:64px 22px calc(40px + env(safe-area-inset-bottom,0px))}
+.pgrid{display:grid;grid-template-columns:repeat(14,1fr);gap:6px}
+
+/* ---------- Landing ---------- */
+.landing{position:absolute;left:0;right:0;bottom:0;top:0;width:100%;max-width:480px;margin:0 auto;background:var(--bg);
+  transform:translateY(105%);transition:transform .55s cubic-bezier(.32,.72,0,1);overflow:hidden}
+.layer.open .landing{transform:translateY(0)}
+.landing .close{top:calc(env(safe-area-inset-top,0px) + 12px);right:16px;background:rgba(30,30,30,.42);color:#fff}
+.lscroll{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
+.lhero{-webkit-mask-image:linear-gradient(to bottom,#000 62%,rgba(0,0,0,0) 100%);mask-image:linear-gradient(to bottom,#000 62%,rgba(0,0,0,0) 100%)}
+.lhero .media{border-radius:0;aspect-ratio:4/5}
+.lhero .media.loaded{aspect-ratio:auto}
+.lbody{padding:0 24px;margin-top:-56px;position:relative}
+.lbody p{margin:0 0 30px;font-size:24px;line-height:1.28;letter-spacing:-.02em;color:var(--text2);font-weight:400}
+.lbody p b{color:var(--text);font-weight:700}
+.lbody .media{margin:4px 0 34px}
+.lbody p:last-child{margin-bottom:0}
+
+/* ---------- Alert ---------- */
+.alert-wrap{position:fixed;inset:0;z-index:80;display:grid;place-items:center;background:rgba(0,0,0,.3);opacity:0;visibility:hidden;transition:opacity .25s,visibility 0s linear .25s}
+.alert-wrap.open{opacity:1;visibility:visible;transition-delay:0s}
+.alert{width:270px;border-radius:16px;background:var(--alert);-webkit-backdrop-filter:blur(30px) saturate(180%);backdrop-filter:blur(30px) saturate(180%);text-align:center;overflow:hidden;transform:scale(1.08);transition:transform .25s cubic-bezier(.2,.9,.3,1)}
+.alert-wrap.open .alert{transform:scale(1)}
+.alert h3{margin:0;padding:20px 16px 4px;font-size:17px;font-weight:600;letter-spacing:-.01em}
+.alert p{margin:0;padding:0 16px 18px;font-size:13px;line-height:1.35;color:var(--text)}
+.alert .btns{display:grid;grid-template-columns:1fr 1fr;border-top:.5px solid var(--hair)}
+.alert .btns button{height:46px;font-size:17px;color:var(--blue)}
+.alert .btns button+button{border-left:.5px solid var(--hair);font-weight:600}
+.alert .btns button:active{background:var(--chip)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<main class="app" id="app">
+
+  <!-- 1. Edge-to-edge looping hero video: background.mp4 -->
+  <section class="hero" id="hero" aria-hidden="true">
+    <video id="bgv" src="background.mp4#t=0.001" muted loop playsinline webkit-playsinline preload="auto" disablepictureinpicture disableremoteplayback></video>
+  </section>
+
+  <!-- 2. Greeting and time-window prompt -->
+  <section class="head">
+    <h1 id="greet"></h1>
+    <div class="prompt" id="prompt"></div>
+  </section>
+
+  <!-- 3. Two-by-two streak grid -->
+  <section class="grid2">
+    <div class="card imgcard" id="boyImg"></div>
+    <button class="card tilecard press" id="boyTiles" aria-label="Open morning history"></button>
+    <button class="card tilecard press" id="girlTiles" aria-label="Open sleep history"></button>
+    <div class="card imgcard" id="girlImg"></div>
+  </section>
+
+  <!-- 4. This week -->
+  <section class="sec">
+    <button class="card week press" id="week" aria-label="Reset this week"></button>
+  </section>
+
+  <!-- 5. Daily glow -->
+  <section class="sec">
+    <button class="card daycard press" id="dayCard" aria-label="Open all days"></button>
+  </section>
+
+  <!-- 6. Static image grid -->
+  <section class="grid2 links" id="links"></section>
+
+</main>
+
+<!-- Popup with all 1111 tiles -->
+<div class="layer" id="sheet" aria-hidden="true">
+  <div class="backdrop" id="sheetBack"></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="History">
+    <button class="close" id="sheetClose" aria-label="Close"></button>
+    <div class="sheet-scroll" id="sheetScroll"><div class="pgrid" id="pgrid"></div></div>
+  </div>
+</div>
+
+<!-- Landing page -->
+<div class="layer" id="landLayer" aria-hidden="true">
+  <div class="landing" role="dialog" aria-modal="true">
+    <button class="close" id="landClose" aria-label="Close"></button>
+    <div class="lscroll" id="lscroll"></div>
+  </div>
+</div>
+
+<!-- Reset confirmation -->
+<div class="alert-wrap" id="alert" role="alertdialog" aria-modal="true" aria-labelledby="alTitle">
+  <div class="alert">
+    <h3 id="alTitle">Reset this week?</h3>
+    <p>This starts the week again from Monday.</p>
+    <div class="btns"><button id="alNo">No</button><button id="alYes">Yes</button></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ================= Config ================= */
+  var NAME = 'Abhishek Phukon Borah';
+  var START = { y: 2026, m: 9, d: 12 };      // Day 1 = Mon 12 Oct 2026 (month is 0-based)
+  var TOTAL = 1111;
+  var KEY = 'habit.dashboard.v1';
+  var RGB_ALL = '191,90,242';
+
+  // Windows are in minutes from midnight: [start, end)
+  var HABITS = {
+    m: { label: 'Morning session',  rgb: '255,159,10', icon: 'sun',  win: [300, 420],   q: 'Did you get up and work?',        at: '5 AM'  },
+    e: { label: 'Evening exercise', rgb: '48,209,88',  icon: 'bolt', win: [1020, 1140], q: 'Did you exercise?',               at: '5 PM'  },
+    s: { label: 'Evening study',    rgb: '10,132,255', icon: 'book', win: [1140, 1260], q: 'Did you do an evening session?',  at: '7 PM'  },
+    z: { label: 'Sleep',            rgb: '255,55,95',  icon: 'moon', win: [1320, 1410], q: 'Did you sleep early today?',      at: '10 PM' }
+  };
+  var ORDER = ['m', 'e', 's', 'z'];
+
+  /* ================= Helpers ================= */
+  function $(id) { return document.getElementById(id); }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function keyOf(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  var START_UTC = Date.UTC(START.y, START.m, START.d);
+  function idxOf(d) { return Math.round((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - START_UTC) / 86400000); }
+  function dateOfIdx(i) { return new Date(START.y, START.m, START.d + i); }
+  function keyOfIdx(i) { return keyOf(dateOfIdx(i)); }
+  function parseKey(k) { var p = k.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function mondayOf(d) {
+    var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
+    return x;
+  }
+  function minsOf(d) { return d.getHours() * 60 + d.getMinutes(); }
+
+  function svg(p) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + p + '</svg>';
+  }
+  var ICON = {
+    sun: svg('<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6L6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/>'),
+    bolt: svg('<path d="M13 2.5L5 13.5h6l-1 8 8-11h-6z"/>'),
+    book: svg('<path d="M12 6c-2-1.5-5-2-8-1.5V18c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V4.5C17 4 14 4.5 12 6z"/><path d="M12 6v13.5"/>'),
+    moon: svg('<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>'),
+    spark: svg('<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16v4M17 18h4"/>'),
+    check: svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
+    x: svg('<path d="M6 6l12 12M18 6L6 18"/>')
+  };
+
+  /* ---- seeded random (stable picks) ---- */
+  function hash(s) {
+    var h = 1779033703 ^ s.length;
+    for (var i = 0; i < s.length; i++) { h = Math.imul(h ^ s.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); }
+    return h >>> 0;
+  }
+  function rnd(seed) {
+    var a = hash(String(seed));
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function pick(arr, seed) { return arr[Math.floor(rnd(seed)() * arr.length)]; }
+
+  /* ================= Storage ================= */
+  var memDB = null;
+  function loadDB() {
+    var raw = null;
+    try { raw = localStorage.getItem(KEY); } catch (e) {}
+    var d = null;
+    try { d = raw ? JSON.parse(raw) : null; } catch (e) { d = null; }
+    if (!d || typeof d !== 'object' || !d.log || typeof d.log !== 'object') d = memDB || { log: {}, week: { start: '', cells: {} } };
+    if (!d.week || typeof d.week !== 'object') d.week = { start: '', cells: {} };
+    if (!d.week.cells) d.week.cells = {};
+    if (!d.seeded) { d.log[keyOfIdx(0)] = { m: 1, e: 1, s: 1, z: 1 }; d.seeded = 1; }
+    return d;
+  }
+  var db = loadDB();
+  function save() {
+    memDB = db;
+    try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {}
+  }
+  save();
+
+  /* ================= Habit status ================= */
+  function rawVal(k, h) {
+    var r = db.log[k];
+    return r && Object.prototype.hasOwnProperty.call(r, h) ? r[h] : undefined;
+  }
+  // 1 = yes, 0 = no / missed, null = not decided yet
+  function status(h, i, now) {
+    if (i < 0 || i >= TOTAL) return null;
+    var t = idxOf(now);
+    if (i > t) return null;
+    var v = rawVal(keyOfIdx(i), h);
+    if (v !== undefined) return v ? 1 : 0;
+    if (i < t) return 0;
+    return minsOf(now) >= HABITS[h].win[1] ? 0 : null;
+  }
+  function allYes(i) {
+    if (i < 0) return false;
+    var k = keyOfIdx(i);
+    for (var n = 0; n < ORDER.length; n++) if (rawVal(k, ORDER[n]) !== 1) return false;
+    return true;
+  }
+  function runs(h, now) {
+    var t = idxOf(now), i = t, st = status(h, i, now);
+    if (st === null) { i = t - 1; st = status(h, i, now); }
+    if (st === null) return { P: 0, N: 0 };
+    var n = 0;
+    while (i >= 0 && status(h, i, now) === st) { n++; i--; }
+    return st === 1 ? { P: n, N: 0 } : { P: 0, N: n };
+  }
+
+  /* ================= Image logic ================= */
+  function nums(prefix, a, b) { var r = []; for (var i = a; i <= b; i++) r.push(prefix + i + '.jpg'); return r; }
+  var CHAR = {
+    boy: {
+      habit: 'm', mode: 'boy',
+      H: nums('boy_h_', 1, 8), V: ['boy_h_s1.jpg', 'boy_h_s2.jpg'], max: 'boy_h_max.jpg',
+      S: nums('boy_s_', 1, 3), SV: ['boy_s_s1.jpg', 'boy_s_s2.jpg'], smax: 'boy_s_max.jpg',
+      sadTier: function (N) { return N >= 4 ? 2 : (N === 3 ? 1 : 0); }
+    },
+    girl: {
+      habit: 'z', mode: 'girl',
+      H: nums('girl_h_', 1, 6), V: nums('girl_h_s', 1, 3), max: 'girl_h_max.jpg',
+      S: nums('girl_s_', 1, 4), SV: nums('girl_s_s', 1, 3), smax: 'girl_s_max.jpg',
+      sadTier: function (N) { return N >= 7 ? 2 : (N >= 5 ? 1 : 0); }
+    }
+  };
+  function happyImage(c, P, now, day) {
+    var hr = now.getHours();
+    if (P >= 15) {
+      if (hr >= 6 && hr < 12) return c.max;                       // 6 AM to noon: the max image
+      return pick(c.H.concat(c.V), day + '|slot' + Math.floor(hr / 3)); // new pick every 3 hours
+    }
+    if (P === 1) return c.H[0];
+    if (P === 2) return c.H[1];
+    if (P < 7) return pick(c.H, day + '|' + P);
+    if (c.mode === 'boy') {
+      if (P === 7) return c.V[0];
+      return pick(c.V.slice(1).concat(c.H), day + '|' + P);
+    }
+    var r = rnd(day + '|r' + P)();
+    return r < 0.7 ? pick(c.V, day + '|v' + P) : pick(c.H, day + '|h' + P);
+  }
+  function sadImage(c, N, day) {
+    var t = c.sadTier(N);
+    if (t === 2) return c.smax;
+    return pick(t === 1 ? c.SV : c.S, day + '|s' + N);
+  }
+  function chooseImage(who, now) {
+    var c = CHAR[who], r = runs(c.habit, now), day = keyOf(now);
+    if (r.P > 0) return happyImage(c, r.P, now, day + who);
+    if (r.N > 0) return sadImage(c, r.N, day + who);
+    return c.H[0];
+  }
+
+  var SKY = '<svg class="sky" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
+    '<defs><linearGradient id="SKYID" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--sky1)"/><stop offset="1" style="stop-color:var(--sky2)"/></linearGradient></defs>' +
+    '<rect width="100" height="100" fill="url(#SKYID)"/>' +
+    '<ellipse cx="36" cy="25" rx="14" ry="6.5" style="fill:var(--cloud)"/><ellipse cx="29" cy="27" rx="7.5" ry="5" style="fill:var(--cloud)"/>' +
+    '<path d="M0 74C25 62 45 72 100 67V100H0Z" style="fill:var(--hill1)"/>' +
+    '<path d="M0 83C30 74 55 85 100 78V100H0Z" style="fill:var(--hill2)"/></svg>';
+  function initImgCard(el, id) {
+    el.innerHTML = SKY.replace(/SKYID/g, id) + '<img alt="">';
+  }
+  function setImg(el, src) {
+    var img = el.querySelector('img');
+    if (!img || img.getAttribute('data-s') === src) return;
+    img.setAttribute('data-s', src);
+    img.style.display = 'none';
+    img.onload = function () { img.style.display = 'block'; };
+    img.onerror = function () { img.style.display = 'none'; };
+    img.src = src;
+  }
+
+  /* ================= Tiles ================= */
+  function tileClass(h, i, now) {
+    var t = idxOf(now), st = status(h, i, now);
+    if (i === t) return 'tile ' + (st === 1 ? 'yes' : 'pend') + ' today';
+    if (i > t) return 'tile future';
+    return 'tile ' + (st === 1 ? 'yes' : 'miss');
+  }
+  function countAt(i, now) {
+    var c = 0;
+    for (var n = 0; n < ORDER.length; n++) if (status(ORDER[n], i, now) === 1) c++;
+    return c;
+  }
+  function allClass(i, now) {
+    var t = idxOf(now);
+    if (i > t) return 'tile future';
+    return 'tile l' + countAt(i, now) + (i === t ? ' today' : '');
+  }
+  function renderTileCard(el, h, now, title) {
+    var H = HABITS[h], t = idxOf(now), N = 15;
+    var start = t < 0 ? 0 : Math.max(0, Math.min(t - 7, TOTAL - N));
+    var g = '';
+    for (var i = start; i < start + N; i++) g += '<i class="' + tileClass(h, i, now) + '"></i>';
+    el.style.setProperty('--rgb', H.rgb);
+    el.innerHTML = '<div class="tc-head"><span class="ico">' + ICON[H.icon] + '</span><span class="tc-title">' + title +
+      '</span><span class="badge' + (status(h, t, now) === 1 ? ' on' : '') + '">' + ICON.check + '</span></div><div class="tc-grid">' + g + '</div>';
+  }
+  function renderDayCard(now) {
+    var el = $('dayCard'), t = idxOf(now), N = 70;
+    var start = t < 0 ? 0 : Math.max(0, Math.min(t - 21, TOTAL - N));
+    var g = '';
+    for (var i = start; i < start + N; i++) g += '<i class="' + allClass(i, now) + '"></i>';
+    el.style.setProperty('--rgb', RGB_ALL);
+    el.innerHTML = '<div class="tc-head"><span class="ico">' + ICON.spark + '</span><span class="tc-title">Daily glow</span><span class="badge' +
+      (countAt(t, now) === 4 ? ' on' : '') + '">' + ICON.check + '</span></div><div class="dc-grid">' + g + '</div>';
+  }
+
+  /* ================= Week ================= */
+  function ensureWeek(now) {
+    var mk = keyOf(mondayOf(now));
+    if (!db.week || db.week.start !== mk) {
+      db.week = { start: mk, cells: {} };
+      if (mk === keyOf(mondayOf(dateOfIdx(0)))) db.week.cells[keyOfIdx(0)] = { m: 1, e: 1, s: 1, z: 1 };
+      save();
+    }
+  }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function renderWeek(now) {
+    ensureWeek(now);
+    var s = parseKey(db.week.start), e = new Date(s.getFullYear(), s.getMonth(), s.getDate() + 6);
+    var range = s.getMonth() === e.getMonth()
+      ? s.getDate() + ' \u2013 ' + e.getDate() + ' ' + MON[e.getMonth()]
+      : s.getDate() + ' ' + MON[s.getMonth()] + ' \u2013 ' + e.getDate() + ' ' + MON[e.getMonth()];
+    var ti = Math.round((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - Date.UTC(s.getFullYear(), s.getMonth(), s.getDate())) / 86400000);
+    var L = ['M', 'T', 'W', 'T', 'F', 'S', 'S'], days = '';
+    for (var i = 0; i < 7; i++) days += '<span' + (i === ti ? ' class="now"' : '') + '>' + L[i] + '</span>';
+    var html = '<div class="wk-top"><span class="range">' + range + '</span><div class="wk-days">' + days + '</div></div>';
+    for (var n = 0; n < ORDER.length; n++) {
+      var h = ORDER[n], H = HABITS[h], prev = false, cells = '';
+      for (var j = 0; j < 7; j++) {
+        var k = keyOf(new Date(s.getFullYear(), s.getMonth(), s.getDate() + j));
+        var cell = db.week.cells[k], yes = !!(cell && cell[h] === 1);
+        cells += '<div class="c' + (yes ? ' yes' : '') + (yes && prev ? ' join' : '') + '"><span class="dot">' + ICON.check + '</span></div>';
+        prev = yes;
+      }
+      html += '<div class="wk-row" style="--rgb:' + H.rgb + '"><div class="wk-label"><span class="ico">' + ICON[H.icon] + '</span><span class="t">' + H.label + '</span></div><div class="wk-cells">' + cells + '</div></div>';
+    }
+    $('week').innerHTML = html;
+  }
+
+  /* ================= Greeting, prompt, theme ================= */
+  function greetText(h) {
+    if (h >= 5 && h < 12) return 'Good morning';
+    if (h >= 12 && h < 17) return 'Good afternoon';
+    if (h >= 17 && h < 21) return 'Good evening';
+    return 'Good night';
+  }
+  function applyTheme(now) {
+    var h = now.getHours(), dark = h >= 18 || h < 6;
+    var theme = dark ? 'dark' : 'light';
+    if (document.documentElement.getAttribute('data-theme') !== theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      $('themeColor').setAttribute('content', dark ? '#000000' : '#F5F5F7');
+    }
+  }
+  function activeHabit(now) {
+    var m = minsOf(now);
+    for (var n = 0; n < ORDER.length; n++) { var w = HABITS[ORDER[n]].win; if (m >= w[0] && m < w[1]) return ORDER[n]; }
+    return null;
+  }
+  function renderPrompt(now) {
+    var el = $('prompt'), h = activeHabit(now), html;
+    if (!h) {
+      var m = minsOf(now), nxt = null;
+      for (var n = 0; n < ORDER.length; n++) if (HABITS[ORDER[n]].win[0] > m) { nxt = ORDER[n]; break; }
+      if (!nxt) nxt = 'm';
+      html = '<p class="q">Next check-in: ' + HABITS[nxt].label.toLowerCase() + ' at ' + HABITS[nxt].at + '.</p>';
+    } else {
+      var v = rawVal(keyOf(now), h);
+      html = '<p class="q">' + HABITS[h].q + '</p><div class="yn" style="--c:rgb(' + HABITS[h].rgb + ')">' +
+        '<button class="yes' + (v === 1 ? ' on' : '') + '" data-h="' + h + '" data-v="1">Yes</button>' +
+        '<button class="no' + (v === 0 ? ' on' : '') + '" data-h="' + h + '" data-v="0">No</button></div>';
+    }
+    if (el.getAttribute('data-sig') !== html) { el.setAttribute('data-sig', html); el.innerHTML = html; }
+  }
+  function answer(h, yes) {
+    var now = new Date();
+    if (activeHabit(now) !== h) return;
+    var k = keyOf(now);
+    if (!db.log[k]) db.log[k] = {};
+    db.log[k][h] = yes ? 1 : 0;
+    ensureWeek(now);
+    if (!db.week.cells[k]) db.week.cells[k] = {};
+    db.week.cells[k][h] = yes ? 1 : 0;
+    save();
+    renderAll();
+  }
+
+  /* ================= Video ================= */
+  var video = $('bgv'), lastOK = null;
+  function playVideo() { try { var p = video.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {} }
+  function syncVideo(now) {
+    var ok = allYes(idxOf(now) - 1);
+    if (ok === lastOK) return;
+    lastOK = ok;
+    $('hero').classList.toggle('rest', !ok);
+    video.muted = true;
+    if (ok) playVideo(); else { try { video.pause(); } catch (e) {} }
+  }
+  video.addEventListener('error', function () { video.style.display = 'none'; });
+  document.addEventListener('touchstart', function () { if (lastOK) playVideo(); }, { once: true, passive: true });
+
+  /* ================= Render all ================= */
+  function renderAll() {
+    var now = new Date();
+    applyTheme(now);
+    $('greet').innerHTML = '<span>' + greetText(now.getHours()) + '</span><span>' + NAME + '</span>';
+    renderPrompt(now);
+    setImg($('boyImg'), chooseImage('boy', now));
+    setImg($('girlImg'), chooseImage('girl', now));
+    renderTileCard($('boyTiles'), 'm', now, 'Morning');
+    renderTileCard($('girlTiles'), 'z', now, 'Sleep');
+    renderWeek(now);
+    renderDayCard(now);
+    syncVideo(now);
+  }
+
+  /* ================= Popups ================= */
+  var root = document.documentElement;
+  function openLayer(id) { $(id).classList.add('open'); $(id).setAttribute('aria-hidden', 'false'); root.classList.add('locked'); }
+  function closeLayer(id) {
+    $(id).classList.remove('open'); $(id).setAttribute('aria-hidden', 'true');
+    if (!document.querySelector('.layer.open')) root.classList.remove('locked');
+  }
+  function openSheet(kind) {
+    var now = new Date(), t = idxOf(now), g = $('pgrid'), frag = document.createDocumentFragment();
+    g.innerHTML = '';
+    g.style.setProperty('--rgb', kind === 'all' ? RGB_ALL : HABITS[kind].rgb);
+    for (var i = 0; i < TOTAL; i++) {
+      var d = document.createElement('div');
+      d.className = kind === 'all' ? allClass(i, now) : tileClass(kind, i, now);
+      frag.appendChild(d);
+    }
+    g.appendChild(frag);
+    var sc = $('sheetScroll');
+    sc.scrollTop = 0;
+    openLayer('sheet');
+    requestAnimationFrame(function () {
+      var tile = t >= 0 && t < TOTAL ? g.children[t] : null;
+      if (tile) sc.scrollTop = Math.max(0, tile.offsetTop - sc.clientHeight / 3);
+    });
+  }
+
+  /* ================= Static grid and landing pages ================= */
+  var LW = ('lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua enim minim veniam quis nostrud exercitation ullamco laboris nisi aliquip commodo consequat duis aute irure reprehenderit voluptate velit esse cillum fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt culpa officia deserunt mollit anim').split(' ');
+  function lorem(seed) {
+    var r = rnd('lorem' + seed), n = 22 + Math.floor(r() * 8), w = [];
+    for (var i = 0; i < n; i++) w.push(LW[Math.floor(r() * LW.length)]);
+    var s = w.join(' ');
+    return s.charAt(0).toUpperCase() + s.slice(1) + '.';
+  }
+  // Replace any lorem(...) call with your own text. The first four words are bolded automatically.
+  var PAGES = [
+    { grid: 'grid1.png', hero: 'landing1.png', imgs: ['story1_1.png', 'story1_2.png', 'story1_3.png'], paras: [lorem('1a'), lorem('1b'), lorem('1c'), lorem('1d')] },
+    { grid: 'grid2.png', hero: 'landing2.png', imgs: ['story2_1.png', 'story2_2.png', 'story2_3.png'], paras: [lorem('2a'), lorem('2b'), lorem('2c'), lorem('2d')] },
+    { grid: 'grid3.png', hero: 'landing3.png', imgs: ['story3_1.png', 'story3_2.png', 'story3_3.png'], paras: [lorem('3a'), lorem('3b'), lorem('3c'), lorem('3d')] },
+    { grid: 'grid4.png', hero: 'landing4.png', imgs: ['story4_1.png', 'story4_2.png', 'story4_3.png'], paras: [lorem('4a'), lorem('4b'), lorem('4c'), lorem('4d')] }
+  ];
+  function mkMedia(src, extra) {
+    var w = document.createElement('div');
+    w.className = 'media' + (extra ? ' ' + extra : '');
+    var img = new Image();
+    img.alt = '';
+    img.onload = function () { w.classList.add('loaded'); };
+    img.onerror = function () { if (img.parentNode) img.parentNode.removeChild(img); };
+    img.src = src;
+    w.appendChild(img);
+    return w;
+  }
+  function buildLinks() {
+    var box = $('links');
+    PAGES.forEach(function (p, n) {
+      var b = document.createElement('button');
+      b.className = 'card gcard press';
+      b.setAttribute('aria-label', 'Open story ' + (n + 1));
+      b.appendChild(mkMedia(p.grid));
+      b.addEventListener('click', function () { openLanding(n); });
+      box.appendChild(b);
+    });
+  }
+  function openLanding(n) {
+    var p = PAGES[n], sc = $('lscroll');
+    sc.innerHTML = '';
+    var hero = document.createElement('div');
+    hero.className = 'lhero';
+    hero.appendChild(mkMedia(p.hero));
+    sc.appendChild(hero);
+    var body = document.createElement('div');
+    body.className = 'lbody';
+    p.paras.forEach(function (t, i) {
+      var el = document.createElement('p'), words = t.trim().split(/\s+/), b = document.createElement('b');
+      b.textContent = words.slice(0, 4).join(' ');
+      el.appendChild(b);
+      el.appendChild(document.createTextNode(' ' + words.slice(4).join(' ')));
+      body.appendChild(el);
+      if (i < p.paras.length - 1 && p.imgs[i]) body.appendChild(mkMedia(p.imgs[i]));
+    });
+    sc.appendChild(body);
+    sc.scrollTop = 0;
+    openLayer('landLayer');
+  }
+
+  /* ================= Wiring ================= */
+  $('sheetClose').innerHTML = ICON.x;
+  $('landClose').innerHTML = ICON.x;
+  initImgCard($('boyImg'), 'skyA');
+  initImgCard($('girlImg'), 'skyB');
+  buildLinks();
+
+  $('prompt').addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('button[data-h]') : null;
+    if (b) answer(b.getAttribute('data-h'), b.getAttribute('data-v') === '1');
+  });
+  $('boyTiles').addEventListener('click', function () { openSheet('m'); });
+  $('girlTiles').addEventListener('click', function () { openSheet('z'); });
+  $('dayCard').addEventListener('click', function () { openSheet('all'); });
+  $('sheetClose').addEventListener('click', function () { closeLayer('sheet'); });
+  $('sheetBack').addEventListener('click', function () { closeLayer('sheet'); });
+  $('landClose').addEventListener('click', function () { closeLayer('landLayer'); });
+
+  $('week').addEventListener('click', function () { $('alert').classList.add('open'); });
+  $('alNo').addEventListener('click', function () { $('alert').classList.remove('open'); });
+  $('alYes').addEventListener('click', function () {
+    var now = new Date();
+    db.week = { start: keyOf(mondayOf(now)), cells: {} };
+    save();
+    renderWeek(now);
+    $('alert').classList.remove('open');
+  });
+  $('alert').addEventListener('click', function (e) { if (e.target === $('alert')) $('alert').classList.remove('open'); });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    $('alert').classList.remove('open');
+    closeLayer('sheet'); closeLayer('landLayer');
+  });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) renderAll(); });
+
+  renderAll();
+  setInterval(renderAll, 30000);
+})();
+</script>
+</body>
+</html>
